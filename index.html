@@ -268,13 +268,24 @@
     background:rgba(255,212,0,.10);border-left:4px solid #ffd400;
     display:flex;align-items:center;gap:12px;margin-top:24px}
   .usoweb-content p.usoweb-warn .usoweb-warn-icon{font-size:24px;line-height:1;flex-shrink:0}
-  /* Tabs — siempre visibles en la parte superior, scrollables en móvil si no caben */
+  /* Tabs — FIJOS en la parte superior del viewport, no se ocultan jamás */
   .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--panel);
-    flex-shrink:0;position:sticky;top:0;z-index:1000;
-    box-shadow:0 1px 3px rgba(0,0,0,.25);
+    position:fixed;top:0;left:0;right:0;z-index:1000;height:44px;
+    box-shadow:0 1px 4px rgba(0,0,0,.4);
     overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
     scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
+  /* El body deja espacio arriba para que el contenido no quede tapado por el menú fijo */
+  body{padding-top:44px}
+  /* En móvil el menú es algo más bajo; ajustamos altura y padding */
+  @media (max-width:760px){
+    .tabs{height:38px}
+    body{padding-top:38px}
+  }
+  @media (max-width:480px){
+    .tabs{height:36px}
+    body{padding-top:36px}
+  }
   .tab{padding:10px 22px;cursor:pointer;color:var(--fg-dim);border:none;
     background:transparent;font-family:'Poppins',sans-serif;font-size:14px;font-weight:600;
     border-bottom:3px solid transparent;border-radius:0;letter-spacing:0;text-transform:none}
@@ -440,10 +451,6 @@
       <span id="mode-pill" class="pill live"><span class="live-dot"></span> en vivo</span>
     </span>
     <span class="ctrl-grp">
-      <button id="t-minus-5" title="-5 min">−5</button>
-      <button id="t-minus-1" title="-1 min">−1</button>
-      <button id="t-plus-1" title="+1 min">+1</button>
-      <button id="t-plus-5" title="+5 min">+5</button>
       <input id="t-manual" type="time" step="1" style="font-family:'JetBrains Mono',ui-monospace,Consolas,monospace">
       <button id="t-live" class="primary">⏱ Vivo</button>
     </span>
@@ -1687,19 +1694,16 @@
       $('position-info').textContent='';
     }
 
+    // Δ marcha: SOLO se calcula a partir de los marcajes del usuario en la columna "Real".
+    // Si el usuario no ha marcado ninguna parada todavía, mostramos ±0:00 (sin retraso ni adelanto).
     let deltaSec = null;
-    if(lp>=0){
-      deltaSec = delayMin*60;
-    } else if(activeIdx>=0 && stops[activeIdx].tm!=null){
-      let diff = t - stops[activeIdx].tm;
-      if(diff<-12*60)diff+=24*60;
-      if(diff>12*60)diff-=24*60;
-      deltaSec = diff*60;
+    if(lp >= 0){
+      deltaSec = delayMin * 60;
     }
     const dEl = $('delta');
-    if(deltaSec==null){dEl.className='delta ontime';dEl.textContent='±0:00'}
-    else if(Math.abs(deltaSec)<30){dEl.className='delta ontime';dEl.textContent='±0:00'}
-    else if(deltaSec<0){dEl.className='delta early';dEl.textContent=fmtDelta(deltaSec)+' adelanto'}
+    if(deltaSec == null){dEl.className='delta ontime';dEl.textContent='±0:00'}
+    else if(Math.abs(deltaSec) < 30){dEl.className='delta ontime';dEl.textContent='±0:00'}
+    else if(deltaSec < 0){dEl.className='delta early';dEl.textContent=fmtDelta(deltaSec)+' adelanto'}
     else{dEl.className='delta late';dEl.textContent=fmtDelta(deltaSec)+' retraso'}
 
     const total = stops.length;
@@ -2031,10 +2035,6 @@
       curIdx=+e.target.value; renderHeader(); renderRows(); updatePosition(); savePrefs();
       if(mapInitialized){ drawRoute(); updateMapTrains(); fitMapToRoute(); }
     });
-    $('t-minus-5').onclick=()=>bumpTime(-5);
-    $('t-minus-1').onclick=()=>bumpTime(-1);
-    $('t-plus-1').onclick=()=>bumpTime(1);
-    $('t-plus-5').onclick=()=>bumpTime(5);
     $('t-live').onclick=goLive;
     $('reset-punches').onclick=clearAllPunches;
     $('t-manual').addEventListener('change',e=>{
