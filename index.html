@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HT Iryo">
+<meta name="application-name" content="HT Iryo">
+<meta name="theme-color" content="#e8201c">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <title>HT Iryo · Autor: David Muñoz Primo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -544,6 +550,30 @@
     .login-card{min-width:280px;padding:24px 22px}
     .login-card h1{font-size:36px}
   }
+  /* Banner instalación PWA */
+  #pwa-install{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(120%);
+    z-index:9000;display:none;align-items:center;gap:12px;padding:10px 14px;
+    background:linear-gradient(135deg,#ff3a35 0%,#e8201c 100%);
+    color:#fff;border-radius:12px;border:1px solid rgba(255,255,255,.18);
+    box-shadow:0 8px 28px rgba(0,0,0,.45);
+    font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;
+    max-width:calc(100% - 24px);transition:transform .35s cubic-bezier(.2,.7,.3,1.1)}
+  #pwa-install.show{display:flex;transform:translateX(-50%) translateY(0)}
+  #pwa-install .pwa-icon{font-size:18px;line-height:1}
+  #pwa-install .pwa-text{display:flex;flex-direction:column;line-height:1.25}
+  #pwa-install .pwa-text small{font-weight:500;opacity:.9;font-size:11px}
+  #pwa-install button{background:#fff;color:#e8201c;border:0;border-radius:8px;
+    padding:7px 14px;font-weight:700;font-family:'Poppins',sans-serif;font-size:12px;
+    cursor:pointer;letter-spacing:.5px;transition:transform .12s}
+  #pwa-install button:hover{transform:scale(1.04)}
+  #pwa-install .pwa-close{background:transparent;color:#fff;border:0;width:28px;height:28px;
+    padding:0;font-size:18px;line-height:1;cursor:pointer;opacity:.85;border-radius:6px}
+  #pwa-install .pwa-close:hover{background:rgba(255,255,255,.18);opacity:1;color:#fff}
+  @media (max-width:520px){
+    #pwa-install{font-size:12px;padding:9px 10px;gap:8px}
+    #pwa-install .pwa-text small{display:none}
+    #pwa-install button{padding:6px 10px;font-size:11px}
+  }
 </style>
 </head>
 <body class="locked">
@@ -579,6 +609,79 @@
       }
     });
   });
+})();
+</script>
+<div id="pwa-install" role="dialog" aria-label="Instalar HT Iryo">
+  <span class="pwa-icon">📲</span>
+  <div class="pwa-text">
+    <span>Instalar HT Iryo</span>
+    <small>Acceso rápido desde tu pantalla de inicio</small>
+  </div>
+  <button id="pwa-install-btn" type="button">INSTALAR</button>
+  <button id="pwa-install-close" class="pwa-close" type="button" aria-label="Cerrar">&times;</button>
+</div>
+<script>
+(function(){
+  var DISMISS_KEY='ebula_pwa_dismissed_v1';
+  var deferredPrompt=null;
+  var banner=document.getElementById('pwa-install');
+  var btn=document.getElementById('pwa-install-btn');
+  var closeBtn=document.getElementById('pwa-install-close');
+  if('serviceWorker' in navigator && location.protocol!=='file:'){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./sw.js').catch(function(){});
+    });
+  }
+  function show(){
+    if(!banner) return;
+    try{ if(localStorage.getItem(DISMISS_KEY)==='1') return; }catch(e){}
+    banner.classList.add('show');
+  }
+  function hide(){ if(banner) banner.classList.remove('show'); }
+  function isStandalone(){
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.navigator.standalone===true;
+  }
+  if(isStandalone()) return;
+  window.addEventListener('beforeinstallprompt', function(ev){
+    ev.preventDefault();
+    deferredPrompt=ev;
+    show();
+  });
+  if(btn) btn.addEventListener('click', function(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(c){
+        if(c && c.outcome==='accepted'){ hide(); }
+        deferredPrompt=null;
+      });
+    } else {
+      var ua=navigator.userAgent||'';
+      var msg;
+      if(/iPhone|iPad|iPod/i.test(ua)){
+        msg='En Safari (iOS): pulsa el botón Compartir y luego "Añadir a pantalla de inicio".';
+      } else {
+        msg='Abre el menú del navegador (⋮) y selecciona "Instalar aplicación" o "Añadir a pantalla de inicio".';
+      }
+      alert(msg);
+    }
+  });
+  if(closeBtn) closeBtn.addEventListener('click', function(){
+    try{ localStorage.setItem(DISMISS_KEY,'1'); }catch(e){}
+    hide();
+  });
+  window.addEventListener('appinstalled', function(){
+    hide();
+    deferredPrompt=null;
+  });
+  setTimeout(function(){
+    if(!banner.classList.contains('show')){
+      var ua=navigator.userAgent||'';
+      var iOS=/iPhone|iPad|iPod/i.test(ua);
+      var android=/Android/i.test(ua);
+      if(iOS || android) show();
+    }
+  }, 2500);
 })();
 </script>
 <div class="tabs">
