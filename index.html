@@ -504,9 +504,83 @@
     .info-row .sub:nth-of-type(2){display:none}
     .legend{display:none}
   }
+  /* Login overlay */
+  body.locked{overflow:hidden}
+  body.locked > *:not(#login-overlay){display:none!important}
+  #login-overlay{position:fixed;inset:0;z-index:9999;display:none;
+    align-items:center;justify-content:center;
+    background-color:#000;
+    background-image:linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.65)),
+      url('https://iryo.eu/sites/default/files/styles/wide/public/image/footer/conectividad-sostenible/alta%20velocidad%20iryo.jpg');
+    background-size:cover;background-position:center center;background-repeat:no-repeat}
+  body.locked #login-overlay{display:flex}
+  .login-card{background:rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:14px;padding:32px 36px;min-width:320px;max-width:90%;
+    box-shadow:0 8px 40px rgba(0,0,0,.7);text-align:center;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .login-card h1{margin:0 0 6px 0;font-family:'Poppins',sans-serif;font-weight:800;
+    font-size:48px;letter-spacing:-1px;color:#fff;text-transform:lowercase;
+    background:linear-gradient(135deg,#ff3a35 0%,#e8201c 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .login-card .login-sub{color:#fff;font-size:13px;margin-bottom:22px;
+    font-family:'Poppins',sans-serif;font-weight:500;letter-spacing:.5px}
+  .login-card input{width:100%;padding:10px 12px;font-size:18px;text-align:center;
+    background:rgba(255,255,255,.10);color:#fff;
+    border:1px solid rgba(255,255,255,.20);
+    border-radius:8px;font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;
+    letter-spacing:6px;box-sizing:border-box;outline:none}
+  .login-card input::placeholder{color:rgba(255,255,255,.45);letter-spacing:0}
+  .login-card input:focus{border-color:#e8201c;box-shadow:0 0 0 2px rgba(232,32,28,.30);
+    background:rgba(255,255,255,.14)}
+  .login-card button{margin-top:14px;width:100%;padding:10px 12px;font-size:13px;
+    background:linear-gradient(135deg,#ff3a35 0%,#e8201c 100%);
+    color:#fff;border:0;border-radius:8px;font-weight:700;
+    cursor:pointer;font-family:'Poppins',sans-serif;letter-spacing:1px;
+    transition:all .15s ease}
+  .login-card button:hover{background:linear-gradient(135deg,#ff5550 0%,#ff3a35 100%)}
+  .login-error{color:#ff8a85;font-size:12px;margin-top:10px;min-height:14px;font-weight:600}
+  @media (max-width:760px){
+    .login-card{min-width:280px;padding:24px 22px}
+    .login-card h1{font-size:36px}
+  }
 </style>
 </head>
-<body>
+<body class="locked">
+<div id="login-overlay">
+  <form class="login-card" id="login-form" autocomplete="off">
+    <h1>HT Iryo</h1>
+    <div class="login-sub">Acceso restringido</div>
+    <input type="password" id="login-pass" inputmode="numeric" autocomplete="off"
+      maxlength="12" placeholder="Contraseña" autofocus>
+    <button type="submit">ENTRAR</button>
+    <div class="login-error" id="login-error"></div>
+  </form>
+</div>
+<script>
+(function(){
+  var KEY='ebula_auth_v1', PASS='8412';
+  try{ if(sessionStorage.getItem(KEY)==='1'){ document.body.classList.remove('locked'); return; } }catch(e){}
+  document.addEventListener('DOMContentLoaded', function(){
+    var f=document.getElementById('login-form');
+    var inp=document.getElementById('login-pass');
+    var err=document.getElementById('login-error');
+    if(!f) return;
+    setTimeout(function(){ try{inp.focus();}catch(e){} }, 50);
+    f.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      if(inp.value===PASS){
+        try{ sessionStorage.setItem(KEY,'1'); }catch(e){}
+        document.body.classList.remove('locked');
+        err.textContent='';
+      } else {
+        err.textContent='Contraseña incorrecta';
+        inp.value=''; inp.focus();
+      }
+    });
+  });
+})();
+</script>
 <div class="tabs">
   <button class="tab active" data-tab="home">🏠 Inicio</button>
   <button class="tab" data-tab="schedule">▦ Horario</button>
