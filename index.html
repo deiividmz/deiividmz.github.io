@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 <script>if(typeof pdfjsLib!=='undefined'){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
 <style>
   :root{
@@ -305,6 +306,119 @@
     font-size:13px!important;box-shadow:0 0 8px rgba(255,212,0,.25)}
   .position-info-box:empty{display:none}
   .position-info-box b{color:#fff7c2;font-weight:800}
+  /* ADIF — paneles de salidas/llegadas */
+  #adif-pane{padding:0}
+  .adif-content{max-width:1200px;margin:0 auto;padding:24px;box-sizing:border-box;width:100%}
+  #adif-pane{box-sizing:border-box;overflow-x:hidden}
+  #adif-pane *{box-sizing:border-box}
+  #adif-pane .adif-content > *{min-width:0}
+  .adif-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+    margin-bottom:14px}
+  .adif-content h2{font-family:'Poppins',sans-serif;font-weight:700;font-size:22px;
+    margin:0;color:#e8201c}
+  .adif-meta{font-family:'Inter',sans-serif;font-size:11px;color:var(--fg-dim);line-height:1.5}
+  .adif-meta b{color:var(--fg)}
+  .adif-meta .adif-warn{color:#e8201c;font-weight:600}
+  .adif-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .adif-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+    padding:7px 12px;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;
+    border-radius:6px;border:1px solid var(--border);background:var(--panel-2);color:var(--fg);
+    letter-spacing:.5px}
+  .adif-btn:hover{border-color:#e8201c;color:#e8201c}
+  .adif-btn.primary{background:#e8201c;color:#fff;border-color:#e8201c}
+  .adif-btn.primary:hover{background:#ff3a35;color:#fff;border-color:#ff3a35}
+  .adif-nav{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    margin-bottom:18px;font-family:'Inter',sans-serif;font-size:12px}
+  .adif-nav a{color:var(--fg-dim);text-decoration:none;padding:3px 8px;border-radius:4px;
+    border:1px solid transparent;transition:all .12s}
+  .adif-nav a:hover{color:#e8201c;border-color:#e8201c}
+  .adif-line-group{margin:0 0 28px 0}
+  .adif-line-header{font-family:'Poppins',sans-serif;font-weight:700;font-size:15px;
+    margin:0 0 14px 0;padding:8px 12px;color:#fff;
+    background:linear-gradient(135deg,#ff3a35 0%,#e8201c 100%);
+    border-radius:6px;letter-spacing:.5px;
+    scroll-margin-top:calc(var(--header-offset, 56px) + 12px)}
+  body.light .adif-line-header{color:#fff}
+  .adif-nav a b{color:#e8201c;font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:13px;letter-spacing:.5px}
+  .adif-nav a:hover b{color:#fff}
+  .adif-nav a:hover{background:linear-gradient(135deg,#ff3a35 0%,#e8201c 100%);border-color:#e8201c;color:#fff}
+    .adif-station{margin-bottom:24px;scroll-margin-top:calc(var(--header-offset, 56px) + 12px)}
+  .adif-station-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+    margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .adif-station-name{font-family:'Poppins',sans-serif;font-weight:700;font-size:16px;
+    color:var(--fg);margin:0}
+  .adif-station-code{color:var(--fg-dim);font-size:11px;font-family:'JetBrains Mono',ui-monospace,Consolas,monospace}
+  .adif-station-tag{font-size:10px;padding:1px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:.7px;
+    background:var(--panel-2);color:var(--fg-dim);border:1px solid var(--border)}
+  .adif-station-tag.ok{color:var(--ok);border-color:var(--ok);background:rgba(63,185,80,.10)}
+  .adif-station-tag.empty{color:var(--fg-dim)}
+  .adif-station-tag.bad{color:var(--bad);border-color:var(--bad);background:rgba(248,81,73,.08)}
+  .adif-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+  .adif-col{min-width:0}
+  .adif-col h3{font-family:'Poppins',sans-serif;font-weight:600;font-size:12px;
+    margin:0 0 6px 0;color:var(--fg-dim);text-transform:uppercase;letter-spacing:1.2px}
+  .adif-col h3 .arrow{margin-right:4px;color:#e8201c}
+  .adif-list{display:flex;flex-direction:column;gap:5px}
+  .adif-row{display:grid;grid-template-columns:54px minmax(0,1fr) auto auto;gap:8px;align-items:center;
+    padding:7px 10px;background:var(--panel);border:1px solid var(--border);border-radius:6px;
+    font-family:'Inter',sans-serif;font-size:12px;min-width:0}
+  .adif-time{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-weight:700;font-size:14px;
+    color:var(--fg)}
+  .adif-route{display:flex;flex-direction:column;line-height:1.25;min-width:0;overflow:hidden}
+  .adif-route .place,.adif-route small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .adif-route .arrow{font-weight:600;color:#e8201c;margin-right:4px}
+  .adif-route .place{font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .adif-route small{color:var(--fg-dim);font-size:10px;font-family:'JetBrains Mono',ui-monospace,Consolas,monospace}
+  .adif-platform{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-weight:700;
+    background:var(--panel-2);border:1px solid var(--border);border-radius:4px;
+    padding:2px 8px;font-size:11px;color:var(--fg);min-width:28px;text-align:center}
+  .adif-platform.empty{color:var(--fg-dim);font-weight:400;background:transparent;border-style:dashed}
+  .adif-badges{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .adif-delay{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:11px;font-weight:700;
+    padding:2px 6px;border-radius:8px;border:1px solid transparent}
+  .adif-delay.late{color:#fff;background:#b91c1c}
+  .adif-delay.early{color:#15803d;background:rgba(63,185,80,.18);border-color:#15803d}
+  .adif-delay.ontime{color:var(--fg-dim)}
+  .adif-running{font-family:'Poppins',sans-serif;font-weight:700;font-size:9px;letter-spacing:.7px;
+    padding:2px 6px;border-radius:8px;background:#15803d;color:#fff;display:inline-flex;align-items:center;gap:4px}
+  .adif-running::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
+    background:#fff;animation:adif-blink 1.5s ease-in-out infinite}
+  @keyframes adif-blink{50%{opacity:.3}}
+  .adif-empty{padding:14px;text-align:center;font-style:italic;color:var(--fg-dim);font-size:12px;
+    background:var(--panel);border:1px dashed var(--border);border-radius:6px}
+  .adif-empty.bad{color:var(--bad);border-color:var(--bad)}
+  body.light .adif-row{background:#fff}
+  body.light .adif-platform{background:#f0f3f6;color:#0d1117}
+  body.light .adif-delay.early{color:#0a4f1f;background:#dcfce7;border-color:#15803d}
+  body.light .adif-delay.late{color:#fff;background:#991b1b}
+  body.light .adif-empty{background:#fff;color:#3d434b}
+  @media (max-width:760px){
+    .adif-content{padding:14px}
+    .adif-cols{grid-template-columns:1fr}
+    .adif-row{grid-template-columns:46px minmax(0,1fr) 36px auto;gap:6px;padding:6px 8px}
+    .adif-row .adif-platform{padding:2px 4px;font-size:10px;min-width:24px}
+    .adif-row .adif-route small{font-size:9px}
+    .adif-row .adif-time{font-size:13px}
+    .adif-station-name{font-size:15px}
+  }
+    /* V\u00eda ADIF inyectada en columna Dependencia */
+  td.name .adif-via{display:inline-flex;align-items:center;gap:3px;
+    margin-left:6px;padding:1px 6px;font-size:10px;font-weight:700;
+    font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;letter-spacing:.5px;
+    background:rgba(232,32,28,.10);color:#ff6b66;border:1px solid rgba(232,32,28,.40);
+    border-radius:4px;white-space:nowrap;vertical-align:middle}
+  body.light td.name .adif-via{background:rgba(232,32,28,.10);color:#b91c1c;border-color:#b91c1c}
+  td.name .adif-delay{display:inline-flex;align-items:center;
+    margin-left:4px;padding:1px 6px;font-size:10px;font-weight:700;
+    font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;letter-spacing:.5px;
+    border-radius:4px;white-space:nowrap;vertical-align:middle}
+  td.name .adif-delay.late{background:#b91c1c;color:#fff;border:1px solid #b91c1c}
+  td.name .adif-delay.early{background:rgba(63,185,80,.18);color:#3fb950;border:1px solid #3fb950}
+  td.name .adif-delay.ontime{background:rgba(63,185,80,.10);color:#3fb950;border:1px solid #3fb950}
+  body.light td.name .adif-delay.late{background:#b91c1c;color:#fff;border-color:#b91c1c}
+  body.light td.name .adif-delay.early{background:#dcfce7;color:#15803d;border-color:#15803d}
+  body.light td.name .adif-delay.ontime{background:#dcfce7;color:#15803d;border-color:#15803d}
   /* DHLTV */
   .dhltv-content{max-width:1200px;margin:0 auto;padding:24px}
   .dhltv-content h2{font-family:'Poppins',sans-serif;font-weight:700;font-size:22px;
@@ -684,10 +798,466 @@
   }, 2500);
 })();
 </script>
+<script id="adif-default" type="application/json">{"generated_at":null,"stations":{}}</script>
+<script>
+(function(){
+  var STATIONS = [
+    {code:'60000', name:'Madrid Atocha (Almudena Grandes)', alts:[]},
+    {code:'17000', name:'Madrid Chamart\u00edn (Clara Campoamor)', alts:[]},
+    {code:'71000', name:'Zaragoza Delicias', alts:['04040']},
+    {code:'71801', name:'Barcelona Sants', alts:[]},
+    {code:'04104', name:'Camp de Tarragona', alts:[]},
+    {code:'03208', name:'Cuenca Fernando Z\u00f3bel', alts:[]},
+    {code:'60600', name:'Albacete Los Llanos', alts:[]},
+    {code:'03216', name:'Val\u00e8ncia Joaqu\u00edn Sorolla', alts:[]},
+    {code:'37200', name:'Ciudad Real Central', alts:['50100','05010','5010']},
+    {code:'50300', name:'Puertollano', alts:['05030','5030']},
+    {code:'50500', name:'C\u00f3rdoba', alts:[]},
+    {code:'51003', name:'Sevilla Santa Justa', alts:[]},
+    {code:'54413', name:'M\u00e1laga Mar\u00eda Zambrano', alts:['99170']},
+    {code:'60911', name:'Alicante', alts:[]}
+  ];
+  var CODE2NAME = {};
+  var STATIONS_BY_CODE = {};
+  STATIONS.forEach(function(s){
+    CODE2NAME[s.code] = s.name;
+    CODE2NAME[String(parseInt(s.code,10))] = s.name;
+    STATIONS_BY_CODE[s.code] = s;
+  });
+  var LINES = [
+    {code:'010', name:'L\u00ednea 010 \u00b7 Madrid\u2013Sevilla',
+      stations:['60000','37200','50300','50500','51003']},
+    {code:'030', name:'L\u00ednea 030 \u00b7 Bif. M\u00e1laga\u2013M\u00e1laga',
+      stations:['54413']},
+    {code:'040', name:'L\u00ednea 040 \u00b7 Chamart\u00edn\u2013Valencia',
+      stations:['17000','03208','03216']},
+    {code:'042', name:'L\u00ednea 042 \u00b7 Bif. Albacete\u2013Alacant',
+      stations:['60600','60911']},
+    {code:'050', name:'L\u00ednea 050 \u00b7 Madrid\u2013Barcelona',
+      stations:['60000','04104','71801']},
+    {code:'054', name:'L\u00ednea 054 \u00b7 Bif. Moncasi\u2013Z. Delicias\u2013Bif. Canal Imperial',
+      stations:['71000']}
+  ];
+  var STORAGE_KEY = 'ebula_adif_v2';
+  var HUB_URL = 'https://info.adif.es/InfoStation';
+  var TIMEOUT_MS = 12000;
+  var CONCURRENCY = 3;
+  var fetched = false;     // se hizo una pasada en esta sesión
+  var inFlight = false;    // hay una pasada corriendo
+  var currentData = null;  // último snapshot aplicado
+
+  function isIryo(t){
+    if(!t) return false;
+    var ci = (t.commercial_id && t.commercial_id[0]) || null;
+    if(ci && (ci.product==='IRYO' || ci.product==='IRY')) return true;
+    if(t.company==='Iryo' || t.company==='IRYO' || t.company==='ILSA') return true;
+    return false;
+  }
+
+  function loadCache(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    var defEl = document.getElementById('adif-default');
+    if(defEl){
+      try{ return JSON.parse(defEl.textContent || '{}'); }catch(e){}
+    }
+    return {generated_at:null, stations:{}};
+  }
+  function saveCache(d){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }catch(e){}
+    try{ window.dispatchEvent(new CustomEvent('ebula:adif-update')); }catch(e){}
+  }
+  // Mapeo nombre-en-horario -> c\u00f3digo ADIF (uppercase, sin acentos)
+  var SCHED2ADIF = {
+    'MADRID-P.ATOCHA-ALMUDENA GRANDES':'60000',
+    'MADRID-PUERTA DE ATOCHA-ALMUDENA GRANDES':'60000',
+    'PUERTA DE ATOCHA-ALMUDENA GRANDES':'60000',
+    'MADRID-ATOCHA-ALMUDENA GRANDES':'60000',
+    'MADRID-CHAMARTIN-CLARA CAMPOAMOR':'17000',
+    'CHAMARTIN-CLARA CAMPOAMOR':'17000',
+    'MADRID CHAMARTIN':'17000',
+    'CHAMARTIN':'17000',
+    'SEVILLA-SANTA JUSTA':'51003',
+    'CORDOBA-JULIO ANGUITA':'50500',
+    'CORDOBA':'50500',
+    'CIUDAD REAL CENTRAL':'37200',
+    'CIUDAD REAL':'37200',
+    'PUERTOLLANO':'50300',
+    'BARCELONA-SANTS':'71801',
+    'CAMP DE TARRAGONA':'04104',
+    'CUENCA FERNANDO ZOBEL':'03208',
+    'ALBACETE-LOS LLANOS':'60600',
+    'ALBACETE LOS LLANOS':'60600',
+    'ALBACETE':'60600',
+    'VALENCIA JOAQUIN SOROLLA':'03216',
+    'VAL\u00c8NCIA JOAQU\u00cdN SOROLLA':'03216',
+    'MALAGA MARIA ZAMBRANO':'54413',
+    'M\u00c1LAGA MAR\u00cdA ZAMBRANO':'54413',
+    'ZARAGOZA-DELICIAS':'71000',
+    'ZARAGOZA DELICIAS':'71000',
+    'ALICANTE':'60911',
+    'ALACANT':'60911'
+  };
+  function normName(s){
+    if(!s) return '';
+    return s.toString().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  }
+  function adifCodeForStopName(stopName){
+    var k = normName(stopName);
+    if(SCHED2ADIF[k]) return SCHED2ADIF[k];
+    // fallback: probar prefijo antes del primer ' - '
+    var head = k.split(' - ')[0];
+    return SCHED2ADIF[head] || null;
+  }
+  function trainNumEq(a, b){
+    if(a==null || b==null) return false;
+    var na = parseInt(String(a).replace(/^0+/, ''), 10);
+    var nb = parseInt(String(b).replace(/^0+/, ''), 10);
+    if(isNaN(na) || isNaN(nb)) return false;
+    return na === nb;
+  }
+  // API p\u00fablica para que el horario consulte la v\u00eda y el retraso
+  window.ebulaAdifLookup = function(stopName, trainNumber){
+    var code = adifCodeForStopName(stopName);
+    if(!code) return null;
+    var data = loadCache();
+    var sd = data && data.stations && data.stations[code];
+    if(!sd || !sd.trains) return null;
+    for(var i=0; i<sd.trains.length; i++){
+      var t = sd.trains[i];
+      var num = t.commercial_id && t.commercial_id[0] && t.commercial_id[0].numbers && t.commercial_id[0].numbers[0];
+      if(trainNumEq(num, trainNumber)){
+        var via = t.platform || t.platform_in || null;
+        var delay = (typeof t.delay_out === 'number') ? t.delay_out :
+                    (typeof t.delay_in === 'number') ? t.delay_in : null;
+        return { platform: via, delay: delay, status: t.status || null };
+      }
+    }
+    return null;
+  };
+  function clearCache(){ try{ localStorage.removeItem(STORAGE_KEY); }catch(e){} }
+
+  function fmtTime(iso){
+    if(!iso) return '';
+    if(/^\d{1,2}:\d{2}$/.test(iso)) return iso;
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return '';
+    return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }
+  function fmtTs(iso){
+    if(!iso) return '\u2014';
+    var d = new Date(iso); if(isNaN(d.getTime())) return iso;
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+  function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"\']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function codeToName(code){ if(!code) return ''; return CODE2NAME[String(code)] || ('C\u00f3d. '+code); }
+  function routeNames(arr){ if(!arr || !arr.length) return ''; return arr.map(function(o){ return codeToName(o.code); }).join(', '); }
+
+  function classify(train){
+    var c = (train.class_stop||'').toLowerCase();
+    if(c==='origin') return {dep:true, arr:false};
+    if(c==='destination') return {dep:false, arr:true};
+    return {dep:true, arr:true};
+  }
+  function buildBadges(t, kind){
+    var html='';
+    var d = (kind==='arr') ? t.delay_in : t.delay_out;
+    if(d==null && t.delay_in!=null) d = t.delay_in;
+    if(d==null && t.delay_out!=null) d = t.delay_out;
+    if(typeof d==='number'){
+      if(d>0) html += '<span class="adif-delay late">+'+d+' min</span>';
+      else if(d<0) html += '<span class="adif-delay early">'+d+' min</span>';
+    }
+    if(t.status==='running') html += '<span class="adif-running">EN RUTA</span>';
+    return html;
+  }
+  function trainRow(t, kind){
+    var time = (kind==='arr') ? fmtTime(t.arrival_time) : fmtTime(t.departure_time);
+    if(!time && kind==='arr') time = fmtTime(t.departure_time);
+    if(!time && kind==='dep') time = fmtTime(t.arrival_time);
+    var num = (t.commercial_id && t.commercial_id[0] && t.commercial_id[0].numbers && t.commercial_id[0].numbers[0]) || '';
+    var place = (kind==='dep') ? routeNames(t.destinations) : routeNames(t.origins);
+    var arrow = (kind==='dep') ? '\u2192' : '\u2190';
+    var platform = t.platform || t.platform_in || '';
+    return '<div class="adif-row">'+
+      '<div class="adif-time">'+escapeHtml(time)+'</div>'+
+      '<div class="adif-route">'+
+        '<div class="place"><span class="arrow">'+arrow+'</span>'+escapeHtml(place||'\u2014')+'</div>'+
+        '<small>Iryo '+escapeHtml(num)+'</small>'+
+      '</div>'+
+      '<div class="adif-platform '+(platform?'':'empty')+'" title="And\u00e9n">'+escapeHtml(platform||'\u2014')+'</div>'+
+      '<div class="adif-badges">'+buildBadges(t,kind)+'</div>'+
+    '</div>';
+  }
+  function sortByTime(list, kind){
+    return list.slice().sort(function(a,b){
+      var ta = (kind==='arr')?a.arrival_time:a.departure_time;
+      var tb = (kind==='arr')?b.arrival_time:b.departure_time;
+      ta = ta || a.departure_time || a.arrival_time || '';
+      tb = tb || b.departure_time || b.arrival_time || '';
+      return String(ta).localeCompare(String(tb));
+    });
+  }
+
+  function setStatusBar(){
+    var tsEl = document.getElementById('adif-ts');
+    if(!tsEl) return;
+    var d = currentData || loadCache();
+    if(inFlight){
+      tsEl.innerHTML = '<span style="color:#e8201c">\u23f3 Cargando datos en vivo desde ADIF\u2026</span>';
+    } else if(d && d.generated_at){
+      tsEl.textContent = fmtTs(d.generated_at);
+    } else {
+      tsEl.textContent = 'sin datos cargados';
+    }
+  }
+
+  function renderStation(L, s, sd, ts){
+    var trains = (sd && sd.trains) || [];
+    var dep = sortByTime(trains.filter(function(t){ return classify(t).dep; }), 'dep');
+    var arr = sortByTime(trains.filter(function(t){ return classify(t).arr; }), 'arr');
+    var tag;
+    if(!sd || sd === undefined){
+      tag = '<span class="adif-station-tag empty">Sin datos</span>';
+    } else if(sd.loading){
+      tag = '<span class="adif-station-tag">Cargando\u2026</span>';
+    } else if(sd.ok===false){
+      tag = '<span class="adif-station-tag bad">Sin respuesta</span>';
+    } else if(!ts){
+      tag = '<span class="adif-station-tag empty">Sin datos</span>';
+    } else if(trains.length===0){
+      tag = '<span class="adif-station-tag empty">Sin servicios Iryo</span>';
+    } else {
+      tag = '<span class="adif-station-tag ok">'+trains.length+' Iryo</span>';
+    }
+    var depHtml, arrHtml;
+    if(!sd){
+      depHtml = arrHtml = '<div class="adif-empty">Esperando datos\u2026</div>';
+    } else if(sd.loading){
+      depHtml = arrHtml = '<div class="adif-empty">\u23f3 Consultando ADIF\u2026</div>';
+    } else if(sd.ok===false){
+      depHtml = arrHtml = '<div class="adif-empty bad">No se pudo conectar al hub ADIF para esta estaci\u00f3n.'+
+        (sd.reason ? '<br>('+escapeHtml(sd.reason)+')' : '')+'</div>';
+    } else if(!ts){
+      depHtml = arrHtml = '<div class="adif-empty">Esperando datos\u2026</div>';
+    } else if(trains.length===0){
+      depHtml = arrHtml = '<div class="adif-empty">Sin servicios Iryo en este snapshot</div>';
+    } else {
+      depHtml = dep.length ? dep.map(function(t){ return trainRow(t,'dep'); }).join('') :
+        '<div class="adif-empty">Sin salidas Iryo en este snapshot</div>';
+      arrHtml = arr.length ? arr.map(function(t){ return trainRow(t,'arr'); }).join('') :
+        '<div class="adif-empty">Sin llegadas Iryo en este snapshot</div>';
+    }
+    return '<div class="adif-station" id="adif-line-'+L.code+'-st-'+s.code+'">'+
+      '<div class="adif-station-head">'+
+        '<h3 class="adif-station-name">'+escapeHtml(s.name)+'</h3>'+
+        '<span class="adif-station-code">ADIF '+s.code+'</span>'+tag+
+      '</div>'+
+      '<div class="adif-cols">'+
+        '<div class="adif-col"><h3><span class="arrow">\u2192</span>Salidas</h3><div class="adif-list">'+depHtml+'</div></div>'+
+        '<div class="adif-col"><h3><span class="arrow">\u2190</span>Llegadas</h3><div class="adif-list">'+arrHtml+'</div></div>'+
+      '</div>'+
+    '</div>';
+  }
+  function renderOneStation(stCode){
+    var data = currentData; if(!data) return;
+    var sd = (data.stations || {})[stCode];
+    var s = STATIONS_BY_CODE[stCode];
+    var ts = data.generated_at;
+    if(!s) return;
+    LINES.forEach(function(L){
+      if(L.stations.indexOf(stCode) < 0) return;
+      var node = document.getElementById('adif-line-'+L.code+'-st-'+stCode);
+      if(!node) return;
+      var fresh = document.createElement('div');
+      fresh.innerHTML = renderStation(L, s, sd, ts);
+      var newNode = fresh.firstChild;
+      if(newNode && node.parentNode){ node.parentNode.replaceChild(newNode, node); }
+    });
+    setStatusBar();
+  }
+  function render(){
+    var data = currentData || loadCache();
+    currentData = data;
+    setStatusBar();
+    var nav = document.getElementById('adif-nav');
+    if(nav && !nav.hasChildNodes()){
+      nav.innerHTML = LINES.map(function(L){
+        return '<a href="#adif-line-'+L.code+'" title="'+escapeHtml(L.name)+'"><b>L'+L.code+'</b></a>';
+      }).join('');
+    }
+    var root = document.getElementById('adif-stations');
+    if(!root) return;
+    var stationsData = (data && data.stations) || {};
+    var ts = data && data.generated_at;
+    var html = LINES.map(function(L){
+      var stationsHtml = L.stations.map(function(stCode){
+        var s = STATIONS_BY_CODE[stCode];
+        if(!s) return '';
+        var sd = stationsData[stCode];
+        return renderStation(L, s, sd, ts);
+      }).join('');
+      return '<div class="adif-line-group" id="adif-line-'+L.code+'">'+
+        '<h3 class="adif-line-header">'+escapeHtml(L.name)+'</h3>'+
+        stationsHtml+
+      '</div>';
+    }).join('');
+    root.innerHTML = html;
+  }
+
+  function fetchOne(code){
+    return new Promise(function(resolve){
+      if(!window.signalR){ resolve({ok:false, reason:'SignalR no disponible'}); return; }
+      var done = false;
+      var hub = 'ECM-'+code;
+      var conn = new signalR.HubConnectionBuilder()
+        .withUrl(HUB_URL, {
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets
+        })
+        .configureLogging(signalR.LogLevel.None)
+        .build();
+      var finish = function(r){
+        if(done) return; done = true;
+        try{ conn.stop(); }catch(e){}
+        resolve(r);
+      };
+      var timer = setTimeout(function(){ finish({ok:false, reason:'timeout'}); }, TIMEOUT_MS);
+      conn.on('ReceiveMessage', function(msg){
+        try{
+          var obj = (typeof msg==='string') ? JSON.parse(msg) : msg;
+          clearTimeout(timer);
+          finish({ok:true, data: obj});
+        }catch(e){
+          clearTimeout(timer);
+          finish({ok:false, reason:'parse: '+e.message});
+        }
+      });
+      conn.start().then(function(){
+        return conn.invoke('JoinInfo', hub);
+      }).then(function(){
+        return conn.invoke('GetLastMessage', hub);
+      }).catch(function(e){
+        clearTimeout(timer);
+        finish({ok:false, reason:'invoke: '+(e && e.message ? e.message : String(e))});
+      });
+    });
+  }
+
+  function fetchStation(stn){
+    var codes = [stn.code].concat(stn.alts || []);
+    var i = 0;
+    function tryNext(){
+      if(i >= codes.length) return Promise.resolve({ok:false, reason:'all_codes_failed'});
+      var c = codes[i++];
+      return fetchOne(c).then(function(r){
+        if(r.ok){ r.used_code = c; return r; }
+        return new Promise(function(res){ setTimeout(function(){ res(tryNext()); }, 800); });
+      });
+    }
+    return tryNext();
+  }
+
+  function runFetch(force){
+    if(inFlight) return;
+    if(!window.signalR){
+      console.warn('@microsoft/signalr no se ha cargado');
+      return;
+    }
+    inFlight = true;
+    var data = {generated_at: new Date().toISOString(), stations: {}};
+    // Marcar todas como loading
+    STATIONS.forEach(function(s){ data.stations[s.code] = { code:s.code, name:s.name, loading:true, trains:[] }; });
+    currentData = data;
+    setStatusBar();
+    render();
+
+    // Cola con concurrencia limitada
+    var queue = STATIONS.slice();
+    var workers = [];
+    function worker(){
+      if(!queue.length) return Promise.resolve();
+      var stn = queue.shift();
+      return fetchStation(stn).then(function(r){
+        var entry;
+        if(r.ok){
+          var trains = (r.data && Array.isArray(r.data.trains)) ? r.data.trains : [];
+          var iryo = trains.filter(isIryo);
+          entry = {code:stn.code, used_code:r.used_code, name:stn.name, ok:true, total_trains:trains.length, iryo_count:iryo.length, trains:iryo};
+        } else {
+          entry = {code:stn.code, name:stn.name, ok:false, reason:r.reason, trains:[]};
+        }
+        data.stations[stn.code] = entry;
+        currentData = data;
+        renderOneStation(stn.code);
+      }).then(worker);
+    }
+    for(var i=0;i<CONCURRENCY;i++) workers.push(worker());
+    Promise.all(workers).then(function(){
+      inFlight = false;
+      data.generated_at = new Date().toISOString();
+      currentData = data;
+      saveCache(data);
+      setStatusBar();
+      render();
+      scheduleAuto();
+    });
+  }
+
+  var AUTO_INTERVAL_MS = 60000;       // refresco cada 60 s
+  var autoTimer = null;
+  var nextAutoAt = 0;
+  function scheduleAuto(){
+    if(autoTimer) clearTimeout(autoTimer);
+    nextAutoAt = Date.now() + AUTO_INTERVAL_MS;
+    autoTimer = setTimeout(function(){
+      // Solo refrescar si la pesta\u00f1a ADIF est\u00e1 activa Y la ventana visible
+      var pane = document.getElementById('adif-pane');
+      var visible = !document.hidden;
+      if(pane && pane.classList.contains('active') && visible){
+        runFetch(false);
+      } else {
+        scheduleAuto(); // reintentar cuando el usuario vuelva
+      }
+    }, AUTO_INTERVAL_MS);
+  }
+
+  function bind(){
+    // Disparar carga la PRIMERA vez que el usuario entra en la pesta\u00f1a ADIF
+    document.addEventListener('click', function(e){
+      var t = e.target.closest && e.target.closest('[data-tab="adif"]');
+      if(t && !fetched){ fetched = true; runFetch(false); }
+    });
+    // Si la pesta\u00f1a ADIF est\u00e1 activa al cargar, lanzar
+    setTimeout(function(){
+      var pane = document.getElementById('adif-pane');
+      if(pane && pane.classList.contains('active') && !fetched){ fetched=true; runFetch(false); }
+    }, 200);
+    // Reanudar auto-refresco al volver a la pesta\u00f1a / visibilidad
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden){
+        var pane = document.getElementById('adif-pane');
+        if(pane && pane.classList.contains('active') && !inFlight && nextAutoAt && nextAutoAt < Date.now()){
+          runFetch(false);
+        }
+      }
+    });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', function(){ bind(); render(); });
+  } else { bind(); render(); }
+})();
+</script>
 <div class="tabs">
   <button class="tab active" data-tab="home">🏠 Inicio</button>
   <button class="tab" data-tab="schedule">▦ Horario</button>
   <button class="tab" data-tab="dhltv">⚠ DHLTV</button>
+  <button class="tab" data-tab="adif">📡 ADIF</button>
   <button class="tab" data-tab="map">🗺 Mapa</button>
   <button class="tab" data-tab="usoweb">⚖ Uso web</button>
   <button id="theme-toggle" class="theme-toggle theme-toggle-tabs" title="Cambiar tema día/noche" aria-label="Cambiar tema">🌙</button>
@@ -790,6 +1360,7 @@
       <div class="home-actions">
         <button class="home-btn home-btn-primary" data-tab="schedule">&#9646; Ver horario</button>
         <button class="home-btn" data-tab="dhltv">&#9888; DHLTV</button>
+        <button class="home-btn" data-tab="adif">&#128225; ADIF</button>
         <button class="home-btn" data-tab="map">&#128507; Ver mapa</button>
       </div>
     </div>
@@ -862,6 +1433,21 @@
       <span id="dhltv-status" class="dhltv-status">Sin documento cargado</span>
     </div>
     <div id="dhltv-list"></div>
+  </div>
+</section>
+<section id="adif-pane" class="pane">
+  <div class="adif-content">
+    <div class="adif-header">
+      <div>
+        <h2>&#128225; ADIF &mdash; Servicios Iryo en circulaci&oacute;n</h2>
+        <div class="adif-meta">
+          <span><b id="adif-ts">&mdash;</b></span>
+        </div>
+      </div>
+      <div class="adif-actions"></div>
+    </div>
+    <div class="adif-nav" id="adif-nav"></div>
+    <div id="adif-stations"></div>
   </div>
 </section>
 <section id="usoweb-pane" class="pane">
@@ -1812,6 +2398,26 @@
 
   // Map: row index -> index of the row that "owns" the merged blq/vmx cell covering it
   let blqOwnerMap = [], vmxOwnerMap = [];
+  function adifViaSuffix(s){
+    if(!window.ebulaAdifLookup || !march || !s || !s.n) return '';
+    if(s._l010cdi) return '';
+    var info = window.ebulaAdifLookup(s.n, march.t);
+    if(!info) return '';
+    var html = '';
+    if(info.platform){
+      var safe = String(info.platform).replace(/[&<>"']/g, function(c){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+      html += ' <span class="adif-via" title="V\u00eda ADIF">V\u00cdA '+safe+'</span>';
+    }
+    if(typeof info.delay === 'number'){
+      var d = info.delay;
+      var cls = d > 0 ? 'late' : (d < 0 ? 'early' : 'ontime');
+      var txt = (d > 0 ? '+' : '') + d + ' min';
+      html += ' <span class="adif-delay '+cls+'" title="Retraso ADIF">'+txt+'</span>';
+    }
+    return html;
+  }
   function renderRows(){
     const tbody = $('rows');
     tbody.innerHTML='';
@@ -1857,7 +2463,7 @@
         <td class="km">${s.k.toFixed(1)}</td>
         ${blqCell}
         ${vmxCell}
-        <td class="name">${(s.c||s.tc)?'<span class="stop-marker"></span>':''}${hasName?escapeHtml(s.n):'<span class="empty-name">PK '+s.k.toFixed(1).replace('.',',')+'</span>'}</td>
+        <td class="name">${(s.c||s.tc)?'<span class="stop-marker"></span>':''}${hasName?escapeHtml(s.n):'<span class="empty-name">PK '+s.k.toFixed(1).replace('.',',')+'</span>'}${adifViaSuffix(s)}</td>
         <td class="time">${timeCell}</td>
         <td class="${comCls}" title="${comTitle}">${comTxt}</td>
         ${actualCell}
@@ -2068,7 +2674,7 @@
   function switchTab(name){
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
     document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active', p.id===name+'-pane'));
-    document.body.classList.remove('tab-home','tab-schedule','tab-map','tab-dhltv','tab-usoweb');
+    document.body.classList.remove('tab-home','tab-schedule','tab-map','tab-dhltv','tab-usoweb','tab-adif');
     document.body.classList.add('tab-' + name);
     // Tras cambiar pestaña recalcular offset (el header solo es visible en schedule)
     requestAnimationFrame(updateHeaderOffset);
@@ -2430,6 +3036,7 @@
   buildAllMarchas();
   buildTrainSel();
   renderHeader();
+  window.addEventListener('ebula:adif-update', function(){ if(march) renderRows(); });
   renderRows();
   bind();
   bindTheme();
