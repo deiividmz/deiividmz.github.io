@@ -1286,11 +1286,6 @@
     <span class="ctrl-grp">
       <span class="sub">Hora actual:</span>
       <span id="clock" class="clock">--:--:--</span>
-      <span id="mode-pill" class="pill live"><span class="live-dot"></span> en vivo</span>
-    </span>
-    <span class="ctrl-grp">
-      <input id="t-manual" type="time" step="1" style="font-family:'JetBrains Mono',ui-monospace,Consolas,monospace">
-      <button id="t-live" class="primary">⏱ Vivo</button>
     </span>
     <span class="ctrl-grp" style="margin-left:auto">
       <span class="sub">Δ marcha:</span>
@@ -2511,17 +2506,10 @@
 
   function updateLive(){
     const d = new Date();
-    if(liveMode){
-      $('clock').textContent = fmtTimeS(d);
-      $('clock').style.color = 'var(--accent)';
-      $('mode-pill').className='pill live';
-      $('mode-pill').innerHTML='<span class="live-dot"></span> en vivo';
-    } else {
-      const h = Math.floor(manualOffsetMs/60), m=Math.floor(manualOffsetMs%60);
-      $('clock').textContent = pad(h)+':'+pad(m)+':00';
-      $('clock').style.color = 'var(--warn)';
-      $('mode-pill').className='pill manual';
-      $('mode-pill').innerHTML='manual';
+    const clock = $('clock');
+    if(clock){
+      clock.textContent = fmtTimeS(d);
+      clock.style.color = 'var(--accent)';
     }
     if(march) updatePosition();
     if(mapInitialized) updateMapTrains();
@@ -2961,14 +2949,7 @@
       curIdx=+e.target.value; renderHeader(); renderRows(); updatePosition(); savePrefs();
       if(mapInitialized){ drawRoute(); updateMapTrains(); fitMapToRoute(); }
     });
-    $('t-live').onclick=goLive;
     $('reset-punches').onclick=clearAllPunches;
-    $('t-manual').addEventListener('change',e=>{
-      const v = e.target.value; if(!v)return;
-      const parts = v.split(':').map(Number);
-      const min = parts[0]*60+parts[1]+(parts[2]||0)/60;
-      goManual(min);
-    });
     $('rows').addEventListener('click',e=>{
       const tr = e.target.closest('tr'); if(!tr)return;
       if(!tr.dataset.idx) return; // ignorar filas LTV
