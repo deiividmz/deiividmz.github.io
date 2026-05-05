@@ -697,11 +697,14 @@
 </head>
 <body class="locked">
 <div id="login-overlay">
-  <form class="login-card" id="login-form" autocomplete="off">
+  <form class="login-card" id="login-form" autocomplete="off" data-form-type="other" novalidate>
     <h1>HT Iryo</h1>
     <div class="login-sub">Acceso restringido</div>
-    <input type="password" id="login-pass" inputmode="numeric" autocomplete="off"
-      maxlength="12" placeholder="Contraseña" autofocus>
+    <input type="text" id="login-pass" inputmode="numeric"
+      autocomplete="one-time-code" pattern="[0-9]*"
+      name="pin" maxlength="12" placeholder="Contraseña" autofocus
+      data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+      style="-webkit-text-security:disc;text-security:disc">
     <button type="submit">ENTRAR</button>
     <div class="login-error" id="login-error"></div>
   </form>
