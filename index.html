@@ -709,7 +709,22 @@
 <script>
 (function(){
   var KEY='ebula_auth_v1', PASS='8412';
-  try{ if(sessionStorage.getItem(KEY)==='1'){ document.body.classList.remove('locked'); return; } }catch(e){}
+  function removeLoginOverlay(){
+    try{
+      var ov = document.getElementById('login-overlay');
+      if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
+    }catch(e){}
+  }
+  try{
+    if(sessionStorage.getItem(KEY)==='1'){
+      document.body.classList.remove('locked');
+      // El overlay puede no estar todavía en el DOM si el script corre
+      // antes del HTML del overlay; lo intentamos ahora y de nuevo en DOMContentLoaded.
+      removeLoginOverlay();
+      document.addEventListener('DOMContentLoaded', removeLoginOverlay);
+      return;
+    }
+  }catch(e){}
   document.addEventListener('DOMContentLoaded', function(){
     var f=document.getElementById('login-form');
     var inp=document.getElementById('login-pass');
@@ -720,8 +735,14 @@
       ev.preventDefault();
       if(inp.value===PASS){
         try{ sessionStorage.setItem(KEY,'1'); }catch(e){}
+        // Limpiar el campo password y desmontarlo del DOM para que el
+        // password manager del navegador no asocie la contraseña con
+        // navegaciones por hash posteriores (#adif-line-010, etc.).
+        inp.value = '';
+        inp.setAttribute('autocomplete','off');
         document.body.classList.remove('locked');
         err.textContent='';
+        removeLoginOverlay();
       } else {
         err.textContent='Contraseña incorrecta';
         inp.value=''; inp.focus();
