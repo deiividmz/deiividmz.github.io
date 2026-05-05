@@ -720,12 +720,8 @@
       ev.preventDefault();
       if(inp.value===PASS){
         try{ sessionStorage.setItem(KEY,'1'); }catch(e){}
+        document.body.classList.remove('locked');
         err.textContent='';
-        // Equivalente a Ctrl+F5: forzar hard reload saltándose la caché HTTP
-        // mediante un cache-buster en la URL (la sintaxis location.reload(true)
-        // está deprecada; el query param es la forma estándar y portable).
-        var url = location.pathname + '?_=' + Date.now() + location.hash;
-        location.replace(url);
       } else {
         err.textContent='Contraseña incorrecta';
         inp.value=''; inp.focus();
