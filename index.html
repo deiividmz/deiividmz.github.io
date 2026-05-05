@@ -716,7 +716,39 @@
     var err=document.getElementById('login-error');
     if(!f) return;
     setTimeout(function(){ try{inp.focus();}catch(e){} }, 50);
+    function clearCookies(){
+      try{
+        var cookies = document.cookie ? document.cookie.split(';') : [];
+        var host = location.hostname;
+        // Generar variantes de dominio (subdominios + dominio raíz) para
+        // asegurar que la cookie se borre venga de donde venga.
+        var domains = [''];
+        if(host){
+          domains.push(host);
+          domains.push('.' + host);
+          var parts = host.split('.');
+          for(var i=1; i<parts.length-1; i++){
+            domains.push('.' + parts.slice(i).join('.'));
+          }
+        }
+        var paths = ['/', location.pathname, location.pathname.replace(/\/[^/]*$/, '/')];
+        cookies.forEach(function(c){
+          var eq = c.indexOf('=');
+          var name = (eq > -1 ? c.substr(0, eq) : c).trim();
+          if(!name) return;
+          paths.forEach(function(p){
+            domains.forEach(function(d){
+              var expr = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=' + p;
+              if(d) expr += '; domain=' + d;
+              document.cookie = expr;
+            });
+          });
+        });
+      }catch(e){}
+    }
     function clearHtmlCache(){
+      // Borrar cookies del documento
+      clearCookies();
       // Borrar Cache API (service worker caches)
       var p1 = (window.caches && caches.keys)
         ? caches.keys().then(function(keys){
