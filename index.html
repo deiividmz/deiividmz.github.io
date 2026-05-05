@@ -716,12 +716,30 @@
     var err=document.getElementById('login-error');
     if(!f) return;
     setTimeout(function(){ try{inp.focus();}catch(e){} }, 50);
+    function clearHtmlCache(){
+      // Borrar Cache API (service worker caches)
+      var p1 = (window.caches && caches.keys)
+        ? caches.keys().then(function(keys){
+            return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+          }).catch(function(){})
+        : Promise.resolve();
+      // Desregistrar service workers
+      var p2 = (navigator.serviceWorker && navigator.serviceWorker.getRegistrations)
+        ? navigator.serviceWorker.getRegistrations().then(function(regs){
+            return Promise.all(regs.map(function(r){ return r.unregister(); }));
+          }).catch(function(){})
+        : Promise.resolve();
+      return Promise.all([p1, p2]);
+    }
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
       if(inp.value===PASS){
         try{ sessionStorage.setItem(KEY,'1'); }catch(e){}
-        document.body.classList.remove('locked');
-        err.textContent='';
+        err.textContent='Cargando…';
+        // Borrar caché HTML y recargar para servir versión fresca
+        clearHtmlCache().finally(function(){
+          location.reload();
+        });
       } else {
         err.textContent='Contraseña incorrecta';
         inp.value=''; inp.focus();
