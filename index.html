@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 <script>if(typeof pdfjsLib!=='undefined'){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
 <style>
   :root{
@@ -394,6 +395,11 @@
   .adif-empty{padding:14px;text-align:center;font-style:italic;color:var(--fg-dim);font-size:12px;
     background:var(--panel);border:1px dashed var(--border);border-radius:6px}
   .adif-empty.bad{color:var(--bad);border-color:var(--bad)}
+  /* Aviso para estaciones que ADIF aún no publica (noData) */
+  .adif-no-data{padding:18px 16px;text-align:center;color:var(--warn);font-size:13px;
+    background:rgba(240,136,62,.08);border:1px dashed var(--warn);border-radius:6px;
+    margin-top:6px;font-weight:600;line-height:1.4}
+  body.light .adif-no-data{background:rgba(154,52,18,.06);color:#9a3412;border-color:#9a3412}
   body.light .adif-row{background:#fff}
   body.light .adif-platform{background:#f0f3f6;color:#0d1117}
   body.light .adif-delay.early{color:#0a4f1f;background:#dcfce7;border-color:#15803d}
@@ -846,14 +852,15 @@
   var STATIONS = [
     {code:'60000', name:'Madrid Atocha (Almudena Grandes)', alts:[]},
     {code:'17000', name:'Madrid Chamart\u00edn (Clara Campoamor)', alts:[]},
-    {code:'71000', name:'Zaragoza Delicias', alts:['04040']},
+    {code:'71000', name:'Zaragoza Delicias', alts:['04040'], noData:true,
+     noteHtml:'ADIF todav&iacute;a no proporciona datos para esta estaci&oacute;n.'},
     {code:'71801', name:'Barcelona Sants', alts:[]},
     {code:'04104', name:'Camp de Tarragona', alts:[]},
     {code:'03208', name:'Cuenca Fernando Z\u00f3bel', alts:[]},
     {code:'60600', name:'Albacete Los Llanos', alts:[]},
     {code:'03216', name:'Val\u00e8ncia Joaqu\u00edn Sorolla', alts:[]},
     {code:'37200', name:'Ciudad Real Central', alts:['50100','05010','5010']},
-    {code:'50300', name:'Puertollano', alts:['05030','5030']},
+    {code:'37700', name:'Puertollano'},
     {code:'50500', name:'C\u00f3rdoba', alts:[]},
     {code:'51003', name:'Sevilla Santa Justa', alts:[]},
     {code:'54413', name:'M\u00e1laga Mar\u00eda Zambrano', alts:['99170']},
@@ -868,7 +875,7 @@
   });
   var LINES = [
     {code:'010', name:'L\u00ednea 010 \u00b7 Madrid\u2013Sevilla',
-      stations:['60000','37200','50300','50500','51003']},
+      stations:['60000','37200','37700','50500','51003']},
     {code:'030', name:'L\u00ednea 030 \u00b7 Bif. M\u00e1laga\u2013M\u00e1laga',
       stations:['54413']},
     {code:'040', name:'L\u00ednea 040 \u00b7 Chamart\u00edn\u2013Valencia',
@@ -929,7 +936,7 @@
     'CORDOBA':'50500',
     'CIUDAD REAL CENTRAL':'37200',
     'CIUDAD REAL':'37200',
-    'PUERTOLLANO':'50300',
+    'PUERTOLLANO':'37700',
     'BARCELONA-SANTS':'71801',
     'CAMP DE TARRAGONA':'04104',
     'CUENCA - FERNANDO ZOBEL':'03208',
@@ -1089,6 +1096,19 @@
   }
 
   function renderStation(L, s, sd, ts){
+    // Estaciones marcadas como noData (ADIF no las publica todavía):
+    // mostramos un aviso explícito en vez del estado de carga/error.
+    if(s && s.noData){
+      var msg = s.noteHtml || 'ADIF todav&iacute;a no proporciona datos para esta estaci&oacute;n.';
+      return '<div class="adif-station" id="adif-line-'+L.code+'-st-'+s.code+'">'+
+        '<div class="adif-station-head">'+
+          '<h3 class="adif-station-name">'+escapeHtml(s.name)+'</h3>'+
+          '<span class="adif-station-code">ADIF '+s.code+'</span>'+
+          '<span class="adif-station-tag empty">Sin publicaci&oacute;n</span>'+
+        '</div>'+
+        '<div class="adif-no-data">&#9432; '+msg+'</div>'+
+      '</div>';
+    }
     var trains = (sd && sd.trains) || [];
     var dep = sortByTime(trains.filter(function(t){ return classify(t).dep; }), 'dep');
     var arr = sortByTime(trains.filter(function(t){ return classify(t).arr; }), 'arr');
@@ -1181,17 +1201,24 @@
     root.innerHTML = html;
   }
 
+  // Replica el método de github.com/mariomnts/pantallas-estaciones (Gravita.vue):
+  // - Hub: PRE-ECM-<código> (no ECM-NNNNN; el prefijo PRE- es la clave que
+  //   ADIF requiere actualmente para que el hub responda al JoinInfo).
+  // - Reconexión automática (withAutomaticReconnect).
+  // - Evento 'ReceiveMessage' devuelve JSON con {trains, station_settings, ...}
+  //   ya en el formato que consumen nuestras tarjetas nativas.
   function fetchOne(code){
     return new Promise(function(resolve){
       if(!window.signalR){ resolve({ok:false, reason:'SignalR no disponible'}); return; }
       var done = false;
-      var hub = 'ECM-'+code;
+      var hub = 'PRE-ECM-'+code;
       var conn = new signalR.HubConnectionBuilder()
         .withUrl(HUB_URL, {
           skipNegotiation: true,
           transport: signalR.HttpTransportType.WebSockets
         })
-        .configureLogging(signalR.LogLevel.None)
+        .configureLogging(signalR.LogLevel.Error)
+        .withAutomaticReconnect()
         .build();
       var finish = function(r){
         if(done) return; done = true;
@@ -1208,6 +1235,9 @@
           clearTimeout(timer);
           finish({ok:false, reason:'parse: '+e.message});
         }
+      });
+      conn.on('ReceiveError', function(err){
+        try{ console.error('[ADIF '+code+'] ReceiveError:', err); }catch(_){}
       });
       conn.start().then(function(){
         return conn.invoke('JoinInfo', hub);
@@ -1254,6 +1284,15 @@
     function worker(){
       if(!queue.length) return Promise.resolve();
       var stn = queue.shift();
+      // Estaciones marcadas como noData (ADIF no publica): saltar el fetch
+      // SignalR — sólo marcamos la entrada para el render. El propio
+      // renderStation muestra el aviso a partir de stn.noData.
+      if(stn.noData){
+        data.stations[stn.code] = {code:stn.code, name:stn.name, ok:false, reason:'noData', trains:[]};
+        currentData = data;
+        renderOneStation(stn.code);
+        return Promise.resolve().then(worker);
+      }
       return fetchStation(stn).then(function(r){
         var entry;
         if(r.ok){
@@ -1354,8 +1393,8 @@
   <button class="tab active" data-tab="home">🏠 Inicio</button>
   <button class="tab" data-tab="schedule">▦ Horario</button>
   <button class="tab" data-tab="dhltv">⚠ DHLTV</button>
-  <button class="tab" data-tab="adif" style="display:none">📡 ADIF</button>
-  <button class="tab" data-tab="map" style="display:none">🗺 Mapa</button>
+  <button class="tab" data-tab="adif">📡 ADIF</button>
+  <button class="tab" data-tab="map">🗺 Mapa</button>
   <button class="tab" data-tab="usoweb">⚖ Uso web</button>
   <button id="theme-toggle" class="theme-toggle theme-toggle-tabs" title="Cambiar tema día/noche" aria-label="Cambiar tema">🌙</button>
 </div>
@@ -1452,8 +1491,8 @@
       <div class="home-actions">
         <button class="home-btn home-btn-primary" data-tab="schedule">&#9646; Ver horario</button>
         <button class="home-btn" data-tab="dhltv">&#9888; DHLTV</button>
-        <button class="home-btn" data-tab="adif" style="display:none">&#128225; ADIF</button>
-        <button class="home-btn" data-tab="map" style="display:none">&#128507; Ver mapa</button>
+        <button class="home-btn" data-tab="adif">&#128225; ADIF</button>
+        <button class="home-btn" data-tab="map">&#128507; Ver mapa</button>
       </div>
     </div>
   </div>
