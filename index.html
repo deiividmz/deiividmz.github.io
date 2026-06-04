@@ -535,6 +535,14 @@
     border:1px solid rgba(248,81,73,.45);text-transform:uppercase}
   body.light tr.ltv-row .ltv-nosig{color:#b91c1c;background:rgba(185,28,28,.12);
     border-color:rgba(185,28,28,.45)}
+  /* Badge "CSV" (NARANJA) — LTV marcada con X en la columna CSV del DHLTV */
+  tr.ltv-row .ltv-csv{color:#ff9800;font-weight:800;font-size:10px;flex-shrink:0;
+    background:rgba(255,152,0,.16);padding:1px 6px;border-radius:3px;letter-spacing:.6px;
+    border:1px solid rgba(255,152,0,.55);text-transform:uppercase}
+  body.light tr.ltv-row .ltv-csv{color:#b35c00;background:rgba(224,123,0,.14);
+    border-color:rgba(224,123,0,.5)}
+  .dhltv-table .csv-x{color:#ff9800;font-weight:800;text-align:center}
+  body.light .dhltv-table .csv-x{color:#b35c00}
   tr.ltv-row td.ltv-dep{padding:7px 12px;color:#fff7a8;line-height:1.3}
   tr.ltv-row td.ltv-dep .ltv-cell{display:flex;flex-wrap:wrap;align-items:center;gap:9px;font-size:12px}
   tr.ltv-row .ltv-warn{color:#ffd400;font-weight:800;font-size:16px;flex-shrink:0;
@@ -577,9 +585,13 @@
   tr.boxann-row td.km{color:#a8c7ff;font-size:13px;font-weight:600;text-align:right;
     padding-right:8px;white-space:normal;line-height:1.2;letter-spacing:0}
   body.light tr.boxann-row td.km{color:#0b4ea2}
-  tr.boxann-row td.km .ba-arrow{color:#6f9bff;opacity:.9;margin:0 2px}
+  /* Cada PK en su propio span (nowrap): en pantallas anchas van en línea; en
+     móvil, al no caber el rango, se apilan verticalmente con la flecha. */
+  tr.boxann-row td.km .ba-enter,
+  tr.boxann-row td.km .ba-exit{display:inline-block;white-space:nowrap}
+  tr.boxann-row td.km .ba-arrow{display:inline-block;color:#6f9bff;opacity:.9;margin:0 2px}
   tr.boxann-row td.name.boxann-dep{padding:5px 10px;line-height:1.3}
-  .boxann-cell{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .boxann-cell{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;min-width:0}
   .boxann-vbox{display:inline-flex;align-items:center;justify-content:center;min-width:30px;
     height:20px;padding:0 5px;border:2px solid #6f9bff;border-radius:3px;color:#dbe7ff;
     font-weight:800;font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:13px;
@@ -587,7 +599,7 @@
   .boxann-vbox.gris{border-color:#ff9800;color:#ffd9a8;box-shadow:0 0 5px rgba(255,152,0,.45)}
   body.light .boxann-vbox{border-color:#0b4ea2;color:#0b4ea2}
   body.light .boxann-vbox.gris{border-color:#e07b00;color:#9a5400;box-shadow:none}
-  .boxann-text{color:#cfe0ff;font-weight:600;font-size:12px;letter-spacing:.2px}
+  .boxann-text{color:#cfe0ff;font-weight:600;font-size:12px;letter-spacing:.2px;white-space:nowrap}
   body.light .boxann-text{color:#1f2d4d}
   .usoweb-content{max-width:780px;margin:0 auto;padding:32px 28px;
     font-family:'Inter',sans-serif;color:var(--fg);line-height:1.7}
@@ -747,6 +759,15 @@
       white-space:normal}
     tr.ltv-row td.ltv-km .ltv-km-arrow{margin:0 1px}
     tr.ltv-row td.ltv-dep .ltv-cell{font-size:10px;gap:6px}
+    /* Anotaciones de recuadro (TASF/LZB/VÍA/…) en móvil:
+       - columna Km: cada PK se apila en su propia línea (no cabe el rango en 60px);
+       - Dependencia: texto más pequeño y en UNA sola línea. */
+    tr.boxann-row td.km{font-size:11px;padding-right:4px;line-height:1.15}
+    tr.boxann-row td.km .ba-arrow{margin:0 1px}
+    tr.boxann-row td.name.boxann-dep{padding:4px 6px}
+    .boxann-cell{gap:5px}
+    .boxann-vbox{min-width:22px;height:16px;font-size:10px;padding:0 3px;border-width:1.5px}
+    .boxann-text{font-size:9px;letter-spacing:0;white-space:nowrap}
   }
   /* Tablet vertical (portrait) — pantallas estrechas: ocultar columna Δ y compactar más */
   @media (min-width:600px) and (max-width:900px) and (orientation:portrait){
@@ -3595,8 +3616,8 @@ window.addEventListener('unload', ebulaClearAllData);
         const ba = s._boxann;
         const fba = v => (v==null||isNaN(v)) ? '' : v.toFixed(3).replace('.',',');
         kmCellValue = (ba.a!=null && ba.b!=null)
-          ? (fba(ba.a) + '<span class="ba-arrow">→</span>' + fba(ba.b))
-          : (typeof s.k==='number' ? s.k.toFixed(3).replace('.',',') : '');
+          ? ('<span class="ba-enter">'+fba(ba.a)+'</span><span class="ba-arrow"> → </span><span class="ba-exit">'+fba(ba.b)+'</span>')
+          : (typeof s.k==='number' ? ('<span class="ba-enter">'+s.k.toFixed(3).replace('.',',')+'</span>') : '');
       } else {
         kmCellValue = (isZn && typeof s._znKmDisplay === 'number')
           ? s._znKmDisplay.toFixed(1)
@@ -4363,6 +4384,10 @@ async function parseLTVPdf(file){
       const nsSistema = items.some(it =>
         inBand(it, 620, 640) && (it.str === 'X' || it.str === 'x' || it.str === '×'));
 
+      // Columna "CSV" (x≈686). Una X marca esta LTV en la columna CSV.
+      const csv = items.some(it =>
+        inBand(it, 680, 698) && (it.str === 'X' || it.str === 'x' || it.str === '×'));
+
       const km_ini = parseFloat((kmIniBits[0] && kmIniBits[0].str || '').replace(',','.'));
       const km_fin = parseFloat((kmFinBits[0] && kmFinBits[0].str || '').replace(',','.'));
       const vmaxRaw = ((vmaxBits[0] && vmaxBits[0].str) || '').replace(/\*/g,'');
@@ -4374,7 +4399,7 @@ async function parseLTVPdf(file){
           trayecto: trayecto.replace(/-\s*$/,''),
           via, km_ini, km_fin, vmax,
           motivo, observ,
-          nsSistema
+          nsSistema, csv
         });
       }
     }
@@ -4466,7 +4491,7 @@ function renderLTVList(){
     grp.appendChild(head);
     const tbl = document.createElement('table');
     tbl.className = 'dhltv-table';
-    tbl.innerHTML = `<thead><tr><th>Código</th><th>Trayecto / Estación</th><th>Vía</th><th>Km Ini</th><th>Km Fin</th><th>VMáx</th><th>Motivo</th><th>Observaciones</th></tr></thead>`;
+    tbl.innerHTML = `<thead><tr><th>Código</th><th>Trayecto / Estación</th><th>Vía</th><th>Km Ini</th><th>Km Fin</th><th>VMáx</th><th>CSV</th><th>Motivo</th><th>Observaciones</th></tr></thead>`;
     const tb = document.createElement('tbody');
     byLine[line].forEach(r=>{
       const tr = document.createElement('tr');
@@ -4477,6 +4502,7 @@ function renderLTVList(){
         <td class="km">${r.km_ini.toFixed(3).replace('.',',')}</td>
         <td class="km">${r.km_fin.toFixed(3).replace('.',',')}</td>
         <td class="vel">${r.vmax} km/h</td>
+        <td class="csv-x" title="${r.csv?'Marcada con X en columna CSV':''}">${r.csv?'X':''}</td>
         <td class="motivo">${escapeHtml(r.motivo||'')}</td>
         <td class="observ">${escapeHtml(r.observ||'')}</td>
       `;
@@ -4838,12 +4864,16 @@ renderRows = function(){
       const noSigBadge = ltv.nsSistema
         ? '<span class="ltv-nosig" title="LTV no incorporada al sistema">⊘ NO INCORP. SISTEMA</span>'
         : '';
+      const csvBadge = ltv.csv
+        ? '<span class="ltv-csv" title="Marcada con X en la columna CSV del DHLTV">CSV</span>'
+        : '';
       html += '<td class="name ltv-dep" colspan="4" title="LTV ' + escapeHtml(ltv.codigo) + '">'+
           '<div class="ltv-cell">'+
             '<span class="ltv-warn">⚠</span>'+
             '<span class="ltv-via">V.' + escapeHtml(via) + '</span>'+
             '<span class="ltv-motivo">' + escapeHtml(motivo) + '</span>'+
             noSigBadge +
+            csvBadge +
             '<span class="ltv-codigo">LTV ' + escapeHtml(ltv.codigo) + ' · L' + escapeHtml(ltv.line) + '</span>'+
             observHtml +
           '</div>'+
