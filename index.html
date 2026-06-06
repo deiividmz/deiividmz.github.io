@@ -1547,7 +1547,7 @@
       <label class="sub">Tren:</label>
       <select id="train" style="min-width:90px"></select>
     </span>
-    <button id="reset-punches" class="bad" title="Borrar todos los pasos marcados">↺ Reset punteo</button>
+    <button id="reset-punches" class="track-btn off" type="button" title="Borrar todos los pasos marcados">↺ Reset punteo</button>
   </div>
   <div class="info-row">
     <span id="route" class="badge big" style="font-weight:600"></span>
@@ -4286,7 +4286,7 @@ window.addEventListener('unload', ebulaClearAllData);
   // Mostrar la versión del Service Worker bajo "Web no oficial" en la portada.
   (function showSwVersion(){
     const el=$('sw-version'); if(!el) return;
-    const FALLBACK='ebula-v17';
+    const FALLBACK='ebula-v18';
     const set=v=>{ el.textContent = v || FALLBACK; };
     if(window.caches && caches.keys){
       caches.keys().then(keys=>{
