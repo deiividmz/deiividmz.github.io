@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'ebula-v7';
+const CACHE_NAME = 'ebula-v17';
 const PRECACHE = [
   './',
   './index.html',
