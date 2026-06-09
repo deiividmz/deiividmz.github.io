@@ -1251,8 +1251,12 @@
       var num = t.commercial_id && t.commercial_id[0] && t.commercial_id[0].numbers && t.commercial_id[0].numbers[0];
       if(trainNumEq(num, trainNumber)){
         var via = t.platform || t.platform_in || null;
-        var delay = (typeof t.delay_out === 'number') ? t.delay_out :
-                    (typeof t.delay_in === 'number') ? t.delay_in : null;
+        var dOut = (typeof t.delay_out === 'number') ? t.delay_out : null;
+        var dIn  = (typeof t.delay_in  === 'number') ? t.delay_in  : null;
+        var delay = (dOut !== null) ? dOut : dIn;
+        // Tren adelantado: si la llegada marca adelanto (negativo) y la salida no lo
+        // refleja (nula o >= 0), mostrar el adelanto para que se vea "- X min" como en ADIF.
+        if(dIn !== null && dIn < 0 && (delay === null || delay === 0)) delay = dIn;
         return { platform: via, delay: delay, status: t.status || null };
       }
     }
@@ -4557,7 +4561,7 @@ window.addEventListener('unload', ebulaClearAllData);
   // Mostrar la versión del Service Worker bajo "Web no oficial" en la portada.
   (function showSwVersion(){
     const el=$('sw-version'); if(!el) return;
-    const FALLBACK='ebula-v68';
+    const FALLBACK='ebula-v70';
     const set=v=>{ el.textContent = v || FALLBACK; };
     if(window.caches && caches.keys){
       caches.keys().then(keys=>{
