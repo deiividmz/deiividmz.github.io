@@ -501,6 +501,8 @@
   .adif-delay.early{color:#15803d;background:rgba(63,185,80,.18);border-color:#15803d}
   .adif-delay.ontime{color:var(--fg-dim)}
   .adif-delay-lbl{font-size:9px;color:var(--fg-dim);font-weight:700;letter-spacing:.3px;margin-left:5px;margin-right:1px;text-transform:uppercase}
+  td.name .adif-line{display:flex;flex-wrap:wrap;align-items:center;gap:3px 2px;margin-top:4px}
+  td.name .adif-line .adif-delay-lbl{margin-left:2px}
   .adif-running{font-family:'Poppins',sans-serif;font-weight:700;font-size:9px;letter-spacing:.7px;
     padding:2px 6px;border-radius:8px;background:#15803d;color:#fff;display:inline-flex;align-items:center;gap:4px}
   .adif-running::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
@@ -3648,15 +3650,15 @@ window.addEventListener('unload', ebulaClearAllData);
       if(!s) return;
       const cell = tr.querySelector('td.name');
       if(!cell) return;
-      // Eliminar badges ADIF anteriores
-      cell.querySelectorAll('.adif-via, .adif-delay, .adif-delay-lbl').forEach(el => el.remove());
-      // Calcular y a\u00f1adir nuevos badges (si los hay)
+      // Eliminar la línea ADIF anterior (VÍA + retrasos) y reconstruirla debajo del nombre
+      const oldLine = cell.querySelector('.adif-line');
+      if(oldLine) oldLine.remove();
       const html = adifViaSuffix(s);
       if(html){
-        const tmpl = document.createElement('template');
-        tmpl.innerHTML = html;
-        // adifViaSuffix devuelve "<spans> separados por espacios". Reconstruir.
-        Array.from(tmpl.content.childNodes).forEach(n => cell.appendChild(n));
+        const div = document.createElement('div');
+        div.className = 'adif-line';
+        div.innerHTML = html;
+        cell.appendChild(div);
       }
     });
   }
@@ -3806,12 +3808,14 @@ window.addEventListener('unload', ebulaClearAllData);
           : '';
         depContent = '<div class="boxann-cell">'+vbox+'<span class="boxann-text">'+escapeHtml(ba.x)+'</span></div>';
       } else {
-        const _depInner = ((s.c||s.tc)?'<span class="stop-marker"></span>':'') +
-                          (hasName?escapeHtml(s.n):'') + adifViaSuffix(s);
+        const _depName = ((s.c||s.tc)?'<span class="stop-marker"></span>':'') +
+                         (hasName?escapeHtml(s.n):'');
+        const _adif = adifViaSuffix(s);
+        const _adifLine = _adif ? '<div class="adif-line">'+_adif+'</div>' : '';
         depContent = (isComStop && hasName)
-          ? '<div class="dep-wrap"><span class="dep-name">'+_depInner+'</span>'+
-            '<button class="st-info" data-st="'+escapeHtml(s.n)+'" title="Información de la estación" aria-label="Información de '+escapeHtml(s.n)+'">'+ST_SVG+'</button></div>'
-          : _depInner;
+          ? '<div class="dep-wrap"><span class="dep-name">'+_depName+'</span>'+
+            '<button class="st-info" data-st="'+escapeHtml(s.n)+'" title="Información de la estación" aria-label="Información de '+escapeHtml(s.n)+'">'+ST_SVG+'</button></div>' + _adifLine
+          : '<span class="dep-name">'+_depName+'</span>' + _adifLine;
       }
       // Para filas ZN, la columna Km usa el km de ENTRADA (primer km que aparece
       // en Dependencia), no s.k. Esto mantiene coherencia visual: el maquinista
@@ -4562,7 +4566,7 @@ window.addEventListener('unload', ebulaClearAllData);
   // Mostrar la versión del Service Worker bajo "Web no oficial" en la portada.
   (function showSwVersion(){
     const el=$('sw-version'); if(!el) return;
-    const FALLBACK='ebula-v74';
+    const FALLBACK='ebula-v75';
     const set=v=>{ el.textContent = v || FALLBACK; };
     if(window.caches && caches.keys){
       caches.keys().then(keys=>{
