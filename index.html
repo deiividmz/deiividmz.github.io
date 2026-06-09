@@ -500,6 +500,7 @@
   .adif-delay.late{color:#fff;background:#b91c1c}
   .adif-delay.early{color:#15803d;background:rgba(63,185,80,.18);border-color:#15803d}
   .adif-delay.ontime{color:var(--fg-dim)}
+  .adif-delay-lbl{font-size:9px;color:var(--fg-dim);font-weight:700;letter-spacing:.3px;margin-left:5px;margin-right:1px;text-transform:uppercase}
   .adif-running{font-family:'Poppins',sans-serif;font-weight:700;font-size:9px;letter-spacing:.7px;
     padding:2px 6px;border-radius:8px;background:#15803d;color:#fff;display:inline-flex;align-items:center;gap:4px}
   .adif-running::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
@@ -1253,11 +1254,7 @@
         var via = t.platform || t.platform_in || null;
         var dOut = (typeof t.delay_out === 'number') ? t.delay_out : null;
         var dIn  = (typeof t.delay_in  === 'number') ? t.delay_in  : null;
-        var delay = (dOut !== null) ? dOut : dIn;
-        // Tren adelantado: si la llegada marca adelanto (negativo) y la salida no lo
-        // refleja (nula o >= 0), mostrar el adelanto para que se vea "- X min" como en ADIF.
-        if(dIn !== null && dIn < 0 && (delay === null || delay === 0)) delay = dIn;
-        return { platform: via, delay: delay, status: t.status || null };
+        return { platform: via, delay_in: dIn, delay_out: dOut, status: t.status || null };
       }
     }
     return null;
@@ -3625,12 +3622,17 @@ window.addEventListener('unload', ebulaClearAllData);
       });
       html += ' <span class="adif-via" title="V\u00eda ADIF">V\u00cdA '+safe+'</span>';
     }
-    if(typeof info.delay === 'number'){
-      var d = info.delay;
+    var adKind = (s.n === march.o) ? 'origin' : ((s.n === march.d) ? 'dest' : 'mid');
+    function _delayBadge(d, label){
+      if(typeof d !== 'number') return '';
       var cls = d > 0 ? 'late' : (d < 0 ? 'early' : 'ontime');
       var txt = (d > 0 ? '+' : '') + d + ' min';
-      html += ' <span class="adif-delay '+cls+'" title="Retraso ADIF">'+txt+'</span>';
+      var lbl = label ? '<span class="adif-delay-lbl">'+label+'</span>' : '';
+      return ' '+lbl+'<span class="adif-delay '+cls+'" title="Retraso ADIF'+(label?' \u00b7 '+label:'')+'">'+txt+'</span>';
     }
+    if(adKind === 'origin'){ html += _delayBadge(info.delay_out); }
+    else if(adKind === 'dest'){ html += _delayBadge(info.delay_in); }
+    else { html += _delayBadge(info.delay_in, 'Lleg.'); html += _delayBadge(info.delay_out, 'Sal.'); }
     return html;
   }
   // Actualiza SOLO los badges V\u00cdA/retraso de ADIF en las filas existentes,
@@ -3648,7 +3650,7 @@ window.addEventListener('unload', ebulaClearAllData);
       const cell = tr.querySelector('td.name');
       if(!cell) return;
       // Eliminar badges ADIF anteriores
-      cell.querySelectorAll('.adif-via, .adif-delay').forEach(el => el.remove());
+      cell.querySelectorAll('.adif-via, .adif-delay, .adif-delay-lbl').forEach(el => el.remove());
       // Calcular y a\u00f1adir nuevos badges (si los hay)
       const html = adifViaSuffix(s);
       if(html){
@@ -4561,7 +4563,7 @@ window.addEventListener('unload', ebulaClearAllData);
   // Mostrar la versión del Service Worker bajo "Web no oficial" en la portada.
   (function showSwVersion(){
     const el=$('sw-version'); if(!el) return;
-    const FALLBACK='ebula-v70';
+    const FALLBACK='ebula-v72';
     const set=v=>{ el.textContent = v || FALLBACK; };
     if(window.caches && caches.keys){
       caches.keys().then(keys=>{
