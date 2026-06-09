@@ -310,9 +310,9 @@
   tr.com-stop td.name{font-weight:700}
   /* Icono info de estación (paradas comerciales) + modal */
   .st-info{float:right;background:none;border:0;padding:0;margin:5px 0 4px 14px;cursor:pointer;line-height:0;vertical-align:middle}
-  tr.com-stop td.name{display:flex;align-items:center}
-  tr.com-stop td.name .dep-name{min-width:0;overflow-wrap:break-word;word-break:break-word}
-  tr.com-stop td.name .st-info{float:none;flex-shrink:0;margin:0 0 0 10px}
+  td.name .dep-wrap{display:flex;align-items:center}
+  td.name .dep-wrap .dep-name{min-width:0;overflow-wrap:break-word;word-break:break-word}
+  td.name .dep-wrap .st-info{float:none;flex-shrink:0;margin:0 0 0 10px}
   .st-info svg,.st-info img{width:20px;height:20px;display:block;transition:transform .12s}
   .st-info:hover svg,.st-info:hover img{transform:scale(1.18)}
   #st-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
@@ -3801,13 +3801,12 @@ window.addEventListener('unload', ebulaClearAllData);
           : '';
         depContent = '<div class="boxann-cell">'+vbox+'<span class="boxann-text">'+escapeHtml(ba.x)+'</span></div>';
       } else {
-        depContent = '<span class="dep-name">' +
-                     ((s.c||s.tc)?'<span class="stop-marker"></span>':'') +
-                     (hasName?escapeHtml(s.n):'') + adifViaSuffix(s) +
-                     '</span>' +
-                     ((isComStop && hasName)
-                       ? '<button class="st-info" data-st="'+escapeHtml(s.n)+'" title="Información de la estación" aria-label="Información de '+escapeHtml(s.n)+'">'+ST_SVG+'</button>'
-                       : '');
+        const _depInner = ((s.c||s.tc)?'<span class="stop-marker"></span>':'') +
+                          (hasName?escapeHtml(s.n):'') + adifViaSuffix(s);
+        depContent = (isComStop && hasName)
+          ? '<div class="dep-wrap"><span class="dep-name">'+_depInner+'</span>'+
+            '<button class="st-info" data-st="'+escapeHtml(s.n)+'" title="Información de la estación" aria-label="Información de '+escapeHtml(s.n)+'">'+ST_SVG+'</button></div>'
+          : _depInner;
       }
       // Para filas ZN, la columna Km usa el km de ENTRADA (primer km que aparece
       // en Dependencia), no s.k. Esto mantiene coherencia visual: el maquinista
@@ -4558,7 +4557,7 @@ window.addEventListener('unload', ebulaClearAllData);
   // Mostrar la versión del Service Worker bajo "Web no oficial" en la portada.
   (function showSwVersion(){
     const el=$('sw-version'); if(!el) return;
-    const FALLBACK='ebula-v67';
+    const FALLBACK='ebula-v68';
     const set=v=>{ el.textContent = v || FALLBACK; };
     if(window.caches && caches.keys){
       caches.keys().then(keys=>{
