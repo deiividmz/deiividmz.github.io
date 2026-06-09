@@ -855,10 +855,9 @@
     table{font-size:12px}
     /* Reducir anchos de columnas auxiliares para dar más espacio a Dependencia */
     /* Anchos en %  ya definidos en colgroup — no sobrescribir aquí */
-    td.km{padding-right:6px;width:60px}
-    td.time{width:62px}
-    td.com{width:42px;font-size:15px}
-    td.actual{width:74px;font-size:11px}
+    td.km{padding-right:6px}
+    td.com{font-size:15px}
+    td.actual{font-size:11px}
     td.actual button.punch-btn{padding:1px 4px;font-size:10px}
     .tab{padding:8px 14px;font-size:12px}
     .map-overlay{font-size:11px;padding:8px 10px;min-width:180px}
@@ -4563,7 +4562,7 @@ window.addEventListener('unload', ebulaClearAllData);
   // Mostrar la versión del Service Worker bajo "Web no oficial" en la portada.
   (function showSwVersion(){
     const el=$('sw-version'); if(!el) return;
-    const FALLBACK='ebula-v73';
+    const FALLBACK='ebula-v74';
     const set=v=>{ el.textContent = v || FALLBACK; };
     if(window.caches && caches.keys){
       caches.keys().then(keys=>{
