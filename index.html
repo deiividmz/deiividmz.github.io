@@ -4558,7 +4558,7 @@ window.addEventListener('unload', ebulaClearAllData);
   // Mostrar la versión del Service Worker bajo "Web no oficial" en la portada.
   (function showSwVersion(){
     const el=$('sw-version'); if(!el) return;
-    const FALLBACK='ebula-v66';
+    const FALLBACK='ebula-v67';
     const set=v=>{ el.textContent = v || FALLBACK; };
     if(window.caches && caches.keys){
       caches.keys().then(keys=>{
@@ -5266,6 +5266,7 @@ renderLTVList();
   var MIN_GAP=8000;        // no re-pedir más seguido que 8 s
   var lastFetch=0, inFlight=false;
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function fmtFecha(f){return String(f||'').replace(/\s*-\s*Estado de la Red\s*-\s*/i,' - ');}
   function norm(s){return String(s).normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
   function relevant(t){var n=norm(t);if(NEG.test(n))return false;var hs=false;for(var a=0;a<HS.length;a++){if(n.indexOf(HS[a])>=0){hs=true;break;}}if(!hs)return false;for(var i=0;i<STA.length;i++){if(n.indexOf(STA[i])>=0)return true;}return false;}
   function clean(s){
@@ -5294,7 +5295,7 @@ renderLTVList();
   function render(fecha,msgs){
     var box=document.getElementById('estado-red'); if(!box) return;
     box.hidden=false;
-    var head='<div class="er-head"><span class="er-title">⚠ Estado de la Red</span>'+(fecha?'<span class="er-meta">'+esc(fecha)+'</span>':'')+'</div>';
+    var head='<div class="er-head"><span class="er-title">⚠ Estado de la Red</span>'+(fecha?'<span class="er-meta">'+esc(fmtFecha(fecha))+'</span>':'')+'</div>';
     var body=(msgs&&msgs.length)
       ? msgs.map(function(m){return '<div class="er-item">'+esc(m)+'</div>';}).join('')
       : '<div class="er-empty">No hay incidencias notificadas por Adif.</div>';
@@ -5321,7 +5322,7 @@ renderLTVList();
     ov.innerHTML='<div class="erm-card" role="dialog" aria-modal="true" aria-label="Nuevo aviso de Estado de la Red">'+
       '<button class="erm-close" title="Cerrar" aria-label="Cerrar">×</button>'+
       '<h3>⚠ Estado de la Red — '+(msgs.length>1?'nuevos avisos':'nuevo aviso')+'</h3>'+
-      (fecha?'<div class="erm-meta">'+esc(fecha)+'</div>':'')+
+      (fecha?'<div class="erm-meta">'+esc(fmtFecha(fecha))+'</div>':'')+
       '<div class="erm-body">'+items+'</div></div>';
     ov.addEventListener('click', function(e){ if(e.target===ov || e.target.classList.contains('erm-close')) closeErModal(); });
     document.body.appendChild(ov);
